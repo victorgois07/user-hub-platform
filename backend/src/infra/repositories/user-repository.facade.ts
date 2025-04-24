@@ -5,13 +5,15 @@ import {
   UserWithoutPassword,
 } from '@/domain/repositories/user.repository.interface';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { Cache } from 'cache-manager';
 import { UserRepository } from './user.repository';
 
 @Injectable()
 export class UserRepositoryFacade implements IUserRepository {
+  private readonly logger = new Logger(UserRepositoryFacade.name);
+
   constructor(
     private readonly userRepository: UserRepository,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -22,24 +24,43 @@ export class UserRepositoryFacade implements IUserRepository {
   }
 
   private async clearCache(): Promise<void> {
-    const keys = await this.cacheManager.store.keys('users:list:*');
-    await Promise.all([...keys.map((key) => this.cacheManager.del(key))]);
+    try {
+      const keys = await this.cacheManager.store.keys?.('users:list:*');
+      if (keys && keys.length > 0) {
+        await Promise.all(keys.map((key) => this.cacheManager.del(key)));
+      }
+    } catch (error) {
+      this.logger.error('Error clearing cache:', error);
+    }
   }
 
   async findAll(
     pagination: PaginationQueryDto,
   ): Promise<UserWithoutPassword[]> {
-    const cacheKey = this.getCacheKey(pagination);
-    const cachedData =
-      await this.cacheManager.get<UserWithoutPassword[]>(cacheKey);
+    try {
+      const cacheKey = this.getCacheKey(pagination);
 
-    if (cachedData) {
-      return cachedData;
+      const cachedData =
+        await this.cacheManager.get<UserWithoutPassword[]>(cacheKey);
+      if (cachedData) {
+        this.logger.debug('Cache hit for key:', cacheKey);
+        return cachedData;
+      }
+
+      this.logger.debug('Cache miss for key:', cacheKey);
+      const users = await this.userRepository.findAll(pagination);
+
+      try {
+        await this.cacheManager.set(cacheKey, users);
+      } catch (cacheError) {
+        this.logger.warn('Failed to set cache:', cacheError);
+      }
+
+      return users;
+    } catch (error) {
+      this.logger.error('Error in findAll:', error);
+      return this.userRepository.findAll(pagination);
     }
-
-    const users = await this.userRepository.findAll(pagination);
-    await this.cacheManager.set(cacheKey, users);
-    return users;
   }
 
   async findByAny<K extends keyof User>(
