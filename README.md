@@ -261,15 +261,35 @@ Esse script faz o seguinte:
 
 1. Verifica se o seed já foi executado anteriormente usando uma chave (`SEED_KEY`) salva na tabela `SeedMetadata`.
 2. Se ainda não foi executado, ele:
-   - Gera 10 usuários fictícios com dados aleatórios usando a biblioteca `faker`.
-   - Hasheia as senhas com `bcrypt`.
-   - Insere os usuários no banco via `prisma.user.upsert()`, evitando duplicatas.
-   - Salva um registro na tabela `SeedMetadata` para evitar duplicação de seedings em execuções futuras.
+   - Insere 5 usuários predefinidos com dados fixos (ver tabela abaixo)
+   - Gera 5 usuários adicionais com dados aleatórios usando a biblioteca `faker`
+   - Hasheia as senhas com `bcrypt`
+   - Insere os usuários no banco via `prisma.user.upsert()`, evitando duplicatas
+   - Salva um registro na tabela `SeedMetadata` para evitar duplicação de seedings em execuções futuras
 
-Essa abordagem garante que os dados de exemplo sejam inseridos apenas uma vez por ambiente, e evita sobrescritas acidentais no banco em produção.
+## Usuários Predefinidos
 
-Caso deseje executar o seed manualmente:
+Estes são os usuários que podem ser usados para login com dados conhecidos:
 
-```bash
-docker-compose exec backend npx prisma db seed
-```
+| Email                   | Password | Name           |
+| ----------------------- | -------- | -------------- |
+| admin@example.com       | admin123 | Admin User     |
+| john.doe@example.com    | admin123 | John Doe       |
+| jane.smith@example.com  | admin123 | Jane Smith     |
+| robert.j@example.com    | admin123 | Robert Johnson |
+| maria.silva@example.com | admin123 | Maria Silva    |
+
+## Usuários Aleatórios
+
+Além dos usuários predefinidos, o sistema também gera 5 usuários aleatórios com:
+
+- Nomes gerados aleatoriamente
+- Emails aleatórios
+- CPFs aleatórios
+- Senha padrão: `admin123` (ou valor definido em `SEED_PASSWORD`)
+
+## Notes
+
+- A senha padrão para todos os usuários é `admin123` a menos que seja sobrescrita pela variável de ambiente `SEED_PASSWORD`
+- Todos os usuários têm tipo de documento CPF
+- Os usuários são criados quando o seed do banco é executado
