@@ -1,0 +1,15 @@
+{
+  "name": "user-hub-platform",
+  "version": "1.0.0",
+  "description": "User Hub Platform",
+  "scripts": {
+    "start": "docker-compose up",
+    "start:detach": "docker-compose up -d",
+    "stop": "docker-compose down",
+    "build": "docker-compose build",
+    "logs": "docker-compose logs -f",
+    "ps": "docker-compose ps"
+  },
+  "author": "Victor Gois Vieira",
+  "license": "ISC"
+}

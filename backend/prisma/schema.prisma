@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DocumentType {
+  CPF
+  CNPJ
+}
+
+model User {
+  id            String       @id @default(uuid()) @db.Uuid
+  firstName     String
+  lastName      String
+  document      String       @db.VarChar(20)
+  documentType  DocumentType
+  email         String       @unique @db.VarChar(100)
+  password      String       @db.VarChar(255)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([document, documentType])
+  @@index([email])
+  @@index([document])
+  @@index([firstName, lastName])
+}
+
+model SeedMetadata {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  createdAt  DateTime @default(now())
+}
